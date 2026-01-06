@@ -27,6 +27,12 @@ export async function judgeAgent(
   research: SynthesizedResearch
 ): Promise<AgentResult<{ selectedDraft: ArticleDraft; decision: JudgeDecision }>> {
 
+  const draftsContent = drafts.map((d, i) => `
+DRAFT ${i + 1} (${d.angle}):
+Title: ${d.title}
+${d.body.substring(0, 2000)}...
+`).join("\n");
+
   const prompt = `Evaluate these ${drafts.length} article drafts and pick the best one.
 
 ORIGINAL BRIEF:
@@ -34,17 +40,7 @@ Keyword: targeting "${research.primary_angle}"
 Key questions to answer: ${research.key_questions.join(", ")}
 Must include: ${research.must_include.join(", ")}
 
-DRAFT 1 (${drafts[0].angle}):
-Title: ${drafts[0].title}
-${drafts[0].body.substring(0, 2000)}...
-
-DRAFT 2 (${drafts[1].angle}):
-Title: ${drafts[1].title}
-${drafts[1].body.substring(0, 2000)}...
-
-DRAFT 3 (${drafts[2].angle}):
-Title: ${drafts[2].title}
-${drafts[2].body.substring(0, 2000)}...
+${draftsContent}
 
 Evaluate each on:
 1. Does it answer the key questions?
@@ -60,14 +56,11 @@ Output JSON only:
   "winner": 0,
   "reasoning": "Why this draft wins",
   "scores": [
-    {"draft_index": 0, "overall": 8.5, "strengths": [".."], "weaknesses": [".."]},
-    {"draft_index": 1, "overall": 7.2, "strengths": [".."], "weaknesses": [".."]},
-    {"draft_index": 2, "overall": 7.8, "strengths": [".."], "weaknesses": [".."]}
+    ${drafts.map((_, i) => `{"draft_index": ${i}, "overall": 8.0, "strengths": [".."], "weaknesses": [".."]}`).join(",\n    ")}
   ],
   "synthesis_opportunity": true,
   "elements_to_combine": [
-    {"from_draft": 1, "element": "The opening hook about patient struggle"},
-    {"from_draft": 2, "element": "The dosing table format"}
+    {"from_draft": 0, "element": "The opening hook"}
   ]
 }`;
 

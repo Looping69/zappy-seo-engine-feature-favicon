@@ -1,5 +1,4 @@
 import { callAIJSON } from "../utils/ai.js";
-import { callDeepSeekJSON } from "../utils/deepseek.js";
 import type { SynthesizedResearch, ArticleDraft, AgentResult } from "../types.js";
 
 // ============================================================================
@@ -61,8 +60,7 @@ Tone: Forward-thinking, energetic, and optimistic health expert.`
 async function writeArticle(
   angle: keyof typeof WRITER_ANGLES,
   keyword: string,
-  research: SynthesizedResearch,
-  useDeepSeek = false
+  research: SynthesizedResearch
 ): Promise<AgentResult<ArticleDraft>> {
 
   const prompt = `Write an article for: "${keyword}"
@@ -90,18 +88,10 @@ Output JSON only:
 }`;
 
   try {
-    let res;
-    if (useDeepSeek) {
-      res = await callDeepSeekJSON<ArticleDraft>(prompt, {
-        systemPrompt: WRITER_ANGLES[angle],
-        maxTokens: 8000
-      });
-    } else {
-      res = await callAIJSON<ArticleDraft>(prompt, {
-        systemPrompt: WRITER_ANGLES[angle],
-        maxTokens: 8000
-      });
-    }
+    const res = await callAIJSON<ArticleDraft>(prompt, {
+      systemPrompt: WRITER_ANGLES[angle],
+      maxTokens: 8000
+    });
     return { success: true, data: res.data, usage: res.usage };
   } catch (error) {
     return { success: false, error: String(error) };
@@ -117,9 +107,6 @@ export const writeEmpathetic = (keyword: string, research: SynthesizedResearch) 
 
 export const writePractical = (keyword: string, research: SynthesizedResearch) =>
   writeArticle("practical", keyword, research);
-
-export const writeDeepSeek = (keyword: string, research: SynthesizedResearch) =>
-  writeArticle("innovative", keyword, research, true);
 
 // ============================================================================
 // REVISION WRITER - Takes critique and revises

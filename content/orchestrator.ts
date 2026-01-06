@@ -1,7 +1,7 @@
 import { parallel } from "./utils/claude.js";
 import { seoResearchAgent, medicalResearchAgent, competitorResearchAgent } from "./agents/research.js";
 import { synthesizerAgent } from "./agents/synthesizer.js";
-import { writeClinical, writeEmpathetic, writePractical, writeDeepSeek, revisionWriter } from "./agents/writers.js";
+import { writeClinical, writeEmpathetic, writePractical, revisionWriter } from "./agents/writers.js";
 import { judgeAgent } from "./agents/judge.js";
 import { runCritique } from "./agents/critics.js";
 import { seoFinalizerAgent } from "./agents/seo.js";
@@ -141,14 +141,13 @@ export class ContentOrchestrator {
     const keyword = this.state.keyword.keyword;
     const research = this.state.synthesizedResearch!;
 
-    // Generate 4 drafts with different angles in parallel
-    this.log("Generating 4 draft angles: Clinical, Empathetic, Practical, and DeepSeek Innovative...", "✍️");
+    // Generate 3 drafts with different angles in parallel
+    this.log("Generating 3 draft angles: Clinical, Empathetic, and Practical...", "✍️");
 
-    const [clinicalResult, empatheticResult, practicalResult, deepSeekResult] = await parallel([
+    const [clinicalResult, empatheticResult, practicalResult] = await parallel([
       () => writeClinical(keyword, research),
       () => writeEmpathetic(keyword, research),
-      () => writePractical(keyword, research),
-      () => writeDeepSeek(keyword, research)
+      () => writePractical(keyword, research)
     ]);
 
     const drafts = [];
@@ -165,15 +164,9 @@ export class ContentOrchestrator {
       drafts.push(practicalResult.data);
       this.log(`Practical draft: "${practicalResult.data.title}"`, "✓");
     }
-    if (deepSeekResult.success && deepSeekResult.data) {
-      drafts.push(deepSeekResult.data);
-      this.log(`DeepSeek Innovative draft: "${deepSeekResult.data.title}"`, "✓");
-    }
-
     this.totalTokens += (clinicalResult.usage?.total_tokens || 0) +
       (empatheticResult.usage?.total_tokens || 0) +
-      (practicalResult.usage?.total_tokens || 0) +
-      (deepSeekResult.usage?.total_tokens || 0);
+      (practicalResult.usage?.total_tokens || 0);
 
     if (drafts.length < 2) {
       this.state.errors.push("Not enough drafts generated");
